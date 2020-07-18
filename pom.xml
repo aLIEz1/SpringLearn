@@ -14,6 +14,7 @@
         <module>Spring-DI</module>
         <module>Spring-AppConfig</module>
         <module>Spring-Proxy</module>
+        <module>Spring-AOP</module>
     </modules>
     <dependencies>
 

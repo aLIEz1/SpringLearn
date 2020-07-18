@@ -761,3 +761,95 @@ public class Client {
 
 - 一个动态代理类代理的是一个接口，一般是对应的**一类业务**
 - **一个动态代理类可以代理多个类，只要这些类实现了同一个接口即可**，不用像静态代理一样每个类都要重写一种方法
+
+
+
+# AOP
+
+## 实现AOP方式
+
+### 方式一：使用Spring的API接口
+
+> 主要是Spring API 接口实现
+
+
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop
+        https://www.springframework.org/schema/aop/spring-aop.xsd">
+<bean id="userService" class="com.lm.service.UserServiceImpl"/>
+    <bean id="log" class="com.lm.log.Log"/>
+    <bean id="afterLog" class="com.lm.log.AfterLog"/>
+<!--    配置AOP导入AOP的约束-->
+    <aop:config>
+<!--        切入点 execution(要执行的位置)-->
+        <aop:pointcut id="pointcut" expression="execution(* com.lm.service.UserServiceImpl.*(..))"/>
+<!--        使用环绕增强-->
+        <aop:advisor advice-ref="log" pointcut-ref="pointcut"/>
+        <aop:advisor advice-ref="afterLog" pointcut-ref="pointcut"/>
+    </aop:config>
+
+</beans>
+```
+
+Log
+
+```java
+package com.lm.log;
+
+import org.springframework.aop.MethodBeforeAdvice;
+
+import java.lang.reflect.Method;
+
+/**
+ * @author super
+ */
+public class Log implements MethodBeforeAdvice {
+    /**
+     *
+     * @param method 要执行的目标对象的方法
+     * @param objects 参数
+     * @param o 目标对象
+     * @throws Throwable
+     */
+    @Override
+    public void before(Method method, Object[] objects, Object o) throws Throwable {
+        assert o != null;
+        System.out.println(o.getClass().getName()+"的"+method.getName()+"被执行了");
+    }
+}
+
+```
+
+测试类
+
+```java
+package com.lm.service;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class UserServiceImplTest {
+    @Test
+    void testAll() {
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+        UserService userService = (UserService) context.getBean("userService");
+        userService.add();
+    }
+}
+```
+
+### 方式二：使用自定义类实现AOP
+
+> 主要是切面定义
+
+### 方式三： 使用注解实现AOP
