@@ -13,6 +13,7 @@
         <module>Spring_Hello</module>
         <module>Spring-DI</module>
         <module>Spring-AppConfig</module>
+        <module>Spring-Proxy</module>
     </modules>
     <dependencies>
 

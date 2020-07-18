@@ -9,6 +9,7 @@
         <module name="Spring_Hello" />
         <module name="Spring-AppConfig" />
         <module name="Spring-DI" />
+        <module name="Spring-Proxy" />
         <module name="Spring-IOC" />
       </profile>
     </annotationProcessing>
