@@ -461,6 +461,8 @@ class UserTest {
 
 
 
+## 静态代理
+
 代码步骤：
 
 1. 接口
@@ -579,3 +581,183 @@ public class Client {
 
 ```
 
+## 静态代理再理解：
+
+在原有的crud基础上增加日志的功能，不可能去一行一行改原有的代码，使用静态代理实现增加的日志功能
+
+业务接口：
+
+```java
+package com.lm.demo02;
+
+/**
+ * @author super
+ */
+public interface UserService {
+    /**
+     * 增
+     */
+    void add();
+
+    /**
+     * 删
+     */
+    void delete();
+
+    /**
+     * 改
+     */
+    void update();
+
+    /**
+     * 查
+     */
+    void query();
+
+}
+
+```
+
+增删改查实现类
+
+```java
+package com.lm.demo02;
+
+public class UserServiceImpl implements UserService{
+    @Override
+    public void add() {
+        System.out.println("增加了一个用户");
+    }
+
+    @Override
+    public void delete() {
+        System.out.println("删除了一个用户");
+
+    }
+
+    @Override
+    public void update() {
+        System.out.println("更改了一个用户");
+
+    }
+
+    @Override
+    public void query() {
+        System.out.println("查询了一个用户");
+
+    }
+}
+
+```
+
+
+
+日志实现类（使用了Spring中推荐的set方法注入对象，而不是使用构造器）
+
+```java
+package com.lm.demo02;
+
+public class UserServiceProxyImpl implements UserService{
+    private UserServiceImpl service;
+
+    public void setService(UserServiceImpl service) {
+        this.service = service;
+    }
+
+    @Override
+    public void add() {
+        log("add");
+        service.add();
+    }
+
+    @Override
+    public void delete() {
+        log("delete");
+        service.delete();
+    }
+
+    @Override
+    public void update() {
+        log("update");
+        service.update();
+
+    }
+
+    @Override
+    public void query() {
+        log("query");
+        service.query();
+
+    }
+    private void log(String msg){
+        System.out.println("使用了"+msg+"方法");
+    }
+}
+
+```
+
+```java
+package com.lm.demo02;
+
+public class Client {
+    public static void main(String[] args) {
+        UserServiceProxyImpl proxy =new UserServiceProxyImpl();
+        proxy.setService(new UserServiceImpl());
+        proxy.add();
+        System.out.println("===================");
+        proxy.delete();
+        System.out.println("===================");
+        proxy.update();
+        System.out.println("===================");
+        proxy.query();
+    }
+}
+```
+
+
+
+测试类
+
+```java
+package com.lm.demo02;
+
+public class Client {
+    public static void main(String[] args) {
+        UserServiceProxyImpl proxy =new UserServiceProxyImpl();
+        proxy.setService(new UserServiceImpl());
+        proxy.add();
+        System.out.println("===================");
+        proxy.delete();
+        System.out.println("===================");
+        proxy.update();
+        System.out.println("===================");
+        proxy.query();
+    }
+}
+
+```
+
+
+
+## 动态代理
+
+- 动态代理和静态代理角色一样
+- 动态代理类是动态生成的，不是我们直接写好的
+- 动态代理分为两大类
+  - 基于接口的动态代理：JDK的动态代理
+  - 基于类的动态代理：cglib
+  -  java字节码实现： Javasist
+
+
+
+需要了解两个类：
+
+- Proxy：代理
+- InvocationHandler ：调用处理程序
+
+
+
+动态代理的好处
+
+- 一个动态代理类代理的是一个接口，一般是对应的**一类业务**
+- **一个动态代理类可以代理多个类，只要这些类实现了同一个接口即可**，不用像静态代理一样每个类都要重写一种方法
