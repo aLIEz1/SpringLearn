@@ -12,6 +12,7 @@
         <module>Spring-IOC</module>
         <module>Spring_Hello</module>
         <module>Spring-DI</module>
+        <module>Spring-AppConfig</module>
     </modules>
     <dependencies>
 

@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="Spring_Hello" />
+        <module name="Spring-AppConfig" />
         <module name="Spring-DI" />
         <module name="Spring-IOC" />
       </profile>
