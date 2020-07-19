@@ -853,3 +853,188 @@ class UserServiceImplTest {
 > 主要是切面定义
 
 ### 方式三： 使用注解实现AOP
+
+```java
+package com.lm.diy;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.Signature;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+
+/**
+ * @author super
+ * Aspect 标记这个类是一个切面
+ */
+@Aspect
+public class AnnotationPointCut {
+    @Before("execution(* com.lm.service.UserServiceImpl.*(..))")
+    public void before(){
+        System.out.println("方法执行前");
+    }
+    @After("execution(* com.lm.service.UserServiceImpl.*(..))")
+    public void after(){
+        System.out.println("方法执行后");
+    }
+    @Around("execution(* com.lm.service.UserServiceImpl.*(..))")
+    public Object around(ProceedingJoinPoint pj) throws Throwable {
+        System.out.println("环绕前");
+        Signature signature =pj.getSignature();
+        System.out.println(signature);
+        Object proceed = pj.proceed();
+        System.out.println("环绕后");
+        return proceed;
+    }
+}
+
+```
+
+xml开启注解支持
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop
+        https://www.springframework.org/schema/aop/spring-aop.xsd">
+<bean id="userService" class="com.lm.service.UserServiceImpl"/>
+    <bean id="log" class="com.lm.log.Log"/>
+    <bean id="afterLog" class="com.lm.log.AfterLog"/>
+    <bean id="annotationPointCut" class="com.lm.diy.AnnotationPointCut">
+
+    </bean>
+    <!--    配置AOP导入AOP的约束-->
+<!--    <aop:config>-->
+<!--&lt;!&ndash;        切入点 execution(要执行的位置)&ndash;&gt;-->
+<!--        <aop:pointcut id="pointcut" expression="execution(* com.lm.service.UserServiceImpl.*(..))"/>-->
+<!--&lt;!&ndash;        使用环绕增强&ndash;&gt;-->
+<!--        <aop:advisor advice-ref="log" pointcut-ref="pointcut"/>-->
+<!--        <aop:advisor advice-ref="afterLog" pointcut-ref="pointcut"/>-->
+<!--    </aop:config>-->
+
+<!--    <aop:config>-->
+<!--        <aop:aspect ref="diy">-->
+<!--            <aop:pointcut id="point" expression="execution(* com.lm.service.UserServiceImpl.*(..))"/>-->
+<!--            <aop:before method="before" pointcut-ref="point"/>-->
+<!--            <aop:after method="after" pointcut-ref="point"/>-->
+<!--        </aop:aspect>-->
+<!--    </aop:config>-->
+<!--    开启注解支持-->
+    <aop:aspectj-autoproxy/>
+</beans>
+```
+
+# 整合Mybatis
+
+步骤：
+
+1. 导入相关jar包
+   1. junit
+   2. mybatis
+   3. mysql数据库
+   4. spring相关
+   5. aop置入
+   6. mybatis-spring
+2. 编写配置文件
+3. 测试
+
+
+
+
+
+流程：
+
+1. 编写数据源配置
+2. sqlSessionFactory
+3. sqlSessionTemplate
+4. 给接口添加实现类
+5. 将自己写的实现类注入到Spring中，然后测试使用即可
+
+可以将dao操作单独封装成一个配置文件
+
+例如：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd">
+    <!--    DataSource：使用Spring的数据源替换mybatis的配置 c3p0 dbcp 。。。-->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url"
+                  value="jdbc:mysql://localhost:3306/mybatis?useUnicode=true&amp;characterEncoding=UTF-8&amp;serverTimezone=CST"/>
+        <property name="username" value="root"/>
+        <property name="password" value="74521"/>
+    </bean>
+
+    <!--    sqlSessionFactory-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="configLocation" value="mybatis-config.xml"/>
+    </bean>
+    <!--    就是sqlSession-->
+    <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+        <!--        只能通过构造器注入，因为他没有set方法-->
+        <constructor-arg index="0" ref="sqlSessionFactory"/>
+    </bean>
+    <bean id="userMapper" class="com.lm.mapper.UserMapperImpl">
+        <property name="sqlSession" ref="sqlSession"/>
+    </bean>
+
+
+</beans>
+```
+
+
+
+比mybatis多了一个接口实现类，做了getmapper和要执行crud的操作
+
+类中有 SqlSessionTemplate 的set方法，方便再spring配置文件中注入SqlSessionTemplate
+
+```java
+package com.lm.mapper;
+
+import com.lm.pojo.User;
+import org.mybatis.spring.SqlSessionTemplate;
+
+import java.util.List;
+
+/**
+ * @author super
+ */
+public class UserMapperImpl implements UserMapper{
+    private SqlSessionTemplate sqlSession;
+
+    public void setSqlSession(SqlSessionTemplate sqlSession) {
+        this.sqlSession = sqlSession;
+    }
+
+    @Override
+    public List<User> selectUser() {
+        return sqlSession.getMapper(UserMapper.class).selectUser();
+    }
+}
+
+```
+
+测试类：
+
+```java
+@Test
+void testSelectUser2() {
+    final ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+    final UserMapper mapper = context.getBean("userMapper", UserMapper.class);
+    for (User user : mapper.selectUser()) {
+        System.out.println(user);
+
+    }
+}
+```
+
